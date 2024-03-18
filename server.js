@@ -66,7 +66,49 @@ const server = http.createServer((req, res) => {
     }
 
     /* ========================== ROUTE HANDLERS ========================== */
+    if (req.method === 'GET' && req.url === '/artists') {
+      res.setHeader('content-type', 'application/json');
+      res.statusCode = 200;
+      let body = fs.readFileSync('./seeds/artists.json');
+      return res.end(body);
+    }
 
+    if (req.method === 'GET' && req.url.startsWith('/artists/')) {
+      let id = req.url.split('/')[2];
+      let artists = JSON.parse(fs.readFileSync('./seeds/artists.json', 'utf-8'))
+      console.log(artists);
+      let data = artists[id];
+      res.statusCode = 200;
+      res.setHeader('content-type', 'application/json');
+      return res.end(JSON.stringify(data));
+    }
+
+    if (req.method === 'POST' && req.url === '/artists') {
+      let body = JSON.parse(fs.readFileSync('./seeds/artists.json', 'utf-8'));
+      body[nextArtistId] = { name: req.body.name, artistId: nextArtistId };
+      let newArtist = body[nextArtistId];
+      res.statusCode = 201;
+      res.setHeader('content-type', 'application/json');
+      nextArtistId++;
+      let updatedDataString = Object.values(body)
+        .map(artist => JSON.stringify(artist))
+        .join(',\n');
+      fs.writeFileSync('./seeds/artists.json', `[${updatedDataString}]`, { flag: 'w' });
+
+      return res.end(JSON.stringify(newArtist));
+    }
+
+    if (req.method === 'PUT' && req.url.startsWith('/artists/')) {
+      let artistId = req.url.split('/')[2];
+      let body = JSON.parse(fs.readFileSync('./seeds/artists.json', 'utf-8'));
+      body[artistId].name = req.body.name;
+      body[artistId].updatedAt = Date.now();
+      fs.writeFileSync('./seeds/artists.json', JSON.stringify(body, null, 2));
+      res.statusCode = 200;
+      res.setHeader('content-type', 'application/json');
+      return res.end(JSON.stringify(body[artistId]));
+
+    }
     // Your code here 
 
     res.statusCode = 404;
